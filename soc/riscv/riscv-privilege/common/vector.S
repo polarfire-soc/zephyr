@@ -37,5 +37,9 @@ SECTION_FUNC(vectors, __start)
     beqz t0, skip_svect
 #endif
 
-	/* Jump to __reset */
-	tail __reset
+	//* Jump to __reset */
+	//tail __reset
+    skip_svect:
+#endif
+	/* Jump to __initialize */
+	tail __initialize
