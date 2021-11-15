@@ -10,6 +10,7 @@ choice
 config SOC_MPFS
 	bool "Microchip MPFS system implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
+	select RISCV_GP
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
     select CPU_HAS_FPU

@@ -28,6 +28,7 @@ GEN_OFFSET_SYM(_cpu_t, nested);
 GEN_OFFSET_SYM(_cpu_t, irq_stack);
 GEN_OFFSET_SYM(_cpu_t, arch);
 
+GEN_ABSOLUTE_SYM(_CPU_STRUCT_SIZEOF, sizeof(struct _cpu));
 GEN_ABSOLUTE_SYM(___cpu_t_SIZEOF, sizeof(struct _cpu));
 
 GEN_OFFSET_SYM(_kernel_t, cpus);

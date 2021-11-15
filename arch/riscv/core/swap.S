@@ -46,7 +46,7 @@ SECTION_FUNC(exception.other, arch_swap)
 	 */
 #if defined(CONFIG_BOARD_HART_TO_USE) && (CONFIG_BOARD_HART_TO_USE != 0)
 	csrr t0, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
+	li t1, ___cpu_t_SIZEOF
 	mul t1,t1,t0
 	la t0, _kernel
 	add t0, t0, t1
