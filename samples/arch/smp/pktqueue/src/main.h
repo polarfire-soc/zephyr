@@ -29,4 +29,4 @@
 #define CRC_BYTE_1 10
 #define CRC_BYTE_2 11
 
-#define STACK_SIZE	2048
+#define STACK_SIZE	4096

@@ -21,7 +21,7 @@
 		     && (CONFIG_MP_NUM_CPUS > 1))
 
 /* size of stack area used by each thread */
-#define STACKSIZE 1024
+#define STACKSIZE 2048
 
 /* scheduling priority used by each thread */
 #define PRIORITY 7
