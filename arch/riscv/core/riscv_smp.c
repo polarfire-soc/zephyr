@@ -31,15 +31,13 @@ volatile struct {
  * initial implementation which assumes any monitor hart is hart id 0 and
  * SMP harts have contiguous hart IDs. CONFIG_SMP_BASE_CPU will have minimum
  * value of 1 for systems with monitor hart and zero otherwise.
- *
+ * 
  */
 
-#if defined(CONFIG_SOC_MPFS)
-/* we will index directly off of mhartid so need extra for E51 */
-volatile __noinit uint64_t hart_wake_flags[5 /* CONFIG_MP_NUM_CPUS + 1*/];
-#else
-volatile __noinit uint64_t hart_wake_flags[CONFIG_MP_NUM_CPUS];
-#endif
+#define WAKE_FLAG_COUNT (CONFIG_SMP_BASE_CPU + CONFIG_MP_NUM_CPUS)
+
+/* we will index directly off of mhartid so need to be careful... */
+volatile __noinit uint64_t hart_wake_flags[WAKE_FLAG_COUNT];
 
 volatile char *riscv_cpu_sp;
 /*
@@ -52,11 +50,8 @@ volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-#if defined(CONFIG_SOC_MPFS)
-	int hart_num = cpu_num + 1;
-#else
-	int hart_num = cpu_num; 
-#endif
+	int hart_num = cpu_num + CONFIG_SMP_BASE_CPU;
+
 	/* Used to avoid empty loops which can cause debugger issues
 	 * and also for retry count on interrupt to keep sending every now and again...
 	 */
