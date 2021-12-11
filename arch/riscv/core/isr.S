@@ -763,9 +763,6 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	 * floating-point registers should be accounted for when corresponding
 	 * config variable is set
 	 */
-loops:
-//	 la a0, 1
-//	 beqz a0, loops
 	STORE_CALLER_SAVED()
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
