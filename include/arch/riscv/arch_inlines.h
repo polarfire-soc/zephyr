@@ -21,15 +21,10 @@ static inline struct _cpu *arch_curr_cpu(void)
 
 	__asm__ volatile("csrr %0, mhartid" : "=r" (hart_id));
 
-#if defined(CONFIG_SOC_MPFS)
-	/* -1 to allow for E51 which cannot participate in SMP */
-	return(&_kernel.cpus[hart_id - 1]);
-#else
-	return(&_kernel.cpus[hart_id]);
-#endif
-#else
+	return(&_kernel.cpus[hart_id - CONFIG_SMP_BASE_CPU]);
+#else /* CONFIG_SMP */
 	return(&_kernel.cpus[0]);
-#endif
+#endif /* CONFIG_SMP */
 }
 
 #endif /* CONFIG_RISCV */

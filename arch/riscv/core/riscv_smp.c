@@ -28,11 +28,10 @@ volatile struct {
  * debugger so we have to stage things carefully to ensure we only wake
  * up at the correct time.
  *
- * MPFS
+ * initial implementation which assumes any monitor hart is hart id 0 and
+ * SMP harts have contiguous hart IDs. CONFIG_SMP_BASE_CPU will have minimum
+ * value of 1 for systems with monitor hart and zero otherwise.
  *
- * initial implementation which assumes there are CONFIG_MP_NUM_CPUS harts
- * which are numbered 1 to 4 as the E51 is hart 0 and we only support SMP
- * on the U54s...
  */
 
 #if defined(CONFIG_SOC_MPFS)
@@ -131,11 +130,7 @@ void arch_sched_ipi(void)
      * if the target is current core, hardware will ignore it
      */
     for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-#if defined(CONFIG_SOC_MPFS)
-        RISCV_CLINT->MSIP[i + 1] = 0x01U;   /*raise soft interrupt for hart(x) where x== hart ID*/
-#else
-        RISCV_CLINT->MSIP[i] = 0x01U;   /*raise soft interrupt for hart(x) where x== hart ID*/
-#endif
+        RISCV_CLINT->MSIP[i + CONFIG_SMP_BASE_CPU] = 0x01U;   /*raise soft interrupt for hart(x) where x== hart ID*/
     }
 }
 
