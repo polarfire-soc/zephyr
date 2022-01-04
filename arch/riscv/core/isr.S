@@ -181,7 +181,6 @@
  * CONFIG_PMP_STACK_GUARD and some other options removed to simplify
  * the initial development.
  */
-#if CONFIG_USE_SWITCH
 #define LOAD_CALLEE_SAVED(reg) \
 	DO_CALLEE_SAVED(RV_OP_LOADREG, reg)
 
@@ -310,6 +309,7 @@ endless:
 #endif /* CONFIG_SUPERVISOR_MODE_CAPABLE */
 
 SECTION_FUNC(exception.entry, __irq_wrapper)
+#if CONFIG_USE_SWITCH
 
 	/*
 	 * Save caller-saved registers on current thread stack.
@@ -628,135 +628,10 @@ skip_load_fp_caller_saved:
 
 	/* Call SOC_ERET to exit ISR */
 	SOC_ERET
-#else /* CONFIG_USE_SWITCH */
-
-#define LOAD_CALLEE_SAVED(reg) \
-	DO_CALLEE_SAVED(RV_OP_LOADREG, reg)
-
-#define DO_CALLER_SAVED(op) \
-	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
-	op gp, __z_arch_esf_t_gp_OFFSET(sp)		;\
-	op tp, __z_arch_esf_t_tp_OFFSET(sp)		;\
-	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
-	op t1, __z_arch_esf_t_t1_OFFSET(sp)		;\
-	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
-	op t3, __z_arch_esf_t_t3_OFFSET(sp)		;\
-	op t4, __z_arch_esf_t_t4_OFFSET(sp)		;\
-	op t5, __z_arch_esf_t_t5_OFFSET(sp)		;\
-	op t6, __z_arch_esf_t_t6_OFFSET(sp)		;\
-	op a0, __z_arch_esf_t_a0_OFFSET(sp)		;\
-	op a1, __z_arch_esf_t_a1_OFFSET(sp)		;\
-	op a2, __z_arch_esf_t_a2_OFFSET(sp)		;\
-	op a3, __z_arch_esf_t_a3_OFFSET(sp)		;\
-	op a4, __z_arch_esf_t_a4_OFFSET(sp)		;\
-	op a5, __z_arch_esf_t_a5_OFFSET(sp)		;\
-	op a6, __z_arch_esf_t_a6_OFFSET(sp)		;\
-	op a7, __z_arch_esf_t_a7_OFFSET(sp)		;
-
-#define STORE_CALLER_SAVED() \
-	addi sp, sp, -__z_arch_esf_t_SIZEOF	;\
-	DO_CALLER_SAVED(RV_OP_STOREREG)		;
-
-#define LOAD_CALLER_SAVED() \
-	DO_CALLER_SAVED(RV_OP_LOADREG)		;\
-	addi sp, sp, __z_arch_esf_t_SIZEOF	;
-
-/*
- * @brief Check previous mode.
- *
- * @param ret Register to return value.
- * @param temp Register used foor temporary value.
- *
- * @return 0 if previous mode is user.
- */
-#define WAS_NOT_USER(ret, temp) \
-	RV_OP_LOADREG ret, __z_arch_esf_t_mstatus_OFFSET(sp)	;\
-	li temp, MSTATUS_MPP					;\
-	and ret, ret, temp					;
 
 
-/* imports */
-GDATA(_sw_isr_table)
-GTEXT(__soc_is_irq)
-GTEXT(__soc_handle_irq)
-GTEXT(_Fault)
-#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
-GTEXT(__soc_save_context)
-GTEXT(__soc_restore_context)
-#endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+#else /* CONFIG_USE_SWITCH --------------------------------------------------------------------------- */
 
-GTEXT(_k_neg_eagain)
-GTEXT(_is_next_thread_current)
-GTEXT(z_get_next_ready_thread)
-
-#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-GTEXT(z_thread_mark_switched_in)
-GTEXT(z_thread_mark_switched_out)
-#ifdef CONFIG_TRACING
-GTEXT(sys_trace_isr_enter)
-#endif /* CONFIG_TRACING */
-#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
-
-#ifdef CONFIG_IRQ_OFFLOAD
-GTEXT(_offload_routine)
-#endif /* CONFIG_IRQ_OFFLOAD */
-
-#ifdef CONFIG_USERSPACE
-GTEXT(z_riscv_do_syscall)
-GTEXT(z_riscv_configure_user_allowed_stack)
-GTEXT(z_interrupt_stacks)
-GTEXT(z_riscv_do_syscall_start)
-GTEXT(z_riscv_do_syscall_end)
-#endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_PMP_STACK_GUARD
-GTEXT(z_riscv_configure_stack_guard)
-#endif /* CONFIG_PMP_STACK_GUARD */
-
-/* exports */
-GTEXT(__irq_wrapper)
-GTEXT(__irq_wrapper_s)
-
-/* use ABI name of registers for the sake of simplicity */
-
-/*
- * Generic architecture-level IRQ handling, along with callouts to
- * SoC-specific routines.
- *
- * Architecture level IRQ handling includes basic context save/restore
- * of standard registers and calling ISRs registered at Zephyr's driver
- * level.
- *
- * Since RISC-V does not completely prescribe IRQ handling behavior,
- * implementations vary (some implementations also deviate from
- * what standard behavior is defined). Hence, the arch level code expects
- * the following functions to be provided at the SOC level:
- *
- *     - __soc_is_irq: decide if we're handling an interrupt or an exception
- *     - __soc_handle_irq: handle SoC-specific details for a pending IRQ
- *       (e.g. clear a pending bit in a SoC-specific register)
- *
- * If CONFIG_RISCV_SOC_CONTEXT_SAVE=y, calls to SoC-level context save/restore
- * routines are also made here. For details, see the Kconfig help text.
- */
-
-/*
- * Handler called upon each exception/interrupt/fault
- * In this architecture, system call (ECALL) is used to perform context
- * switching or IRQ offloading (when enabled).
- */
-
-#if CONFIG_SUPERVISOR_MODE_CAPABLE
-/* Catch for errant supervisor exceptions as we arn't using supervisor mode */
-SECTION_FUNC(exception.entry, __irq_wrapper_s)
-endless:
-    nop
-    nop
-    nop
-    beqz x0, endless
-#endif /* CONFIG_SUPERVISOR_MODE_CAPABLE */
-
-SECTION_FUNC(exception.entry, __irq_wrapper)
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	/* Jump at the beginning of IRQ stack to avoid stack overflow */
