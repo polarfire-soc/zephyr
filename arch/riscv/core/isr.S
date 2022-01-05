@@ -329,7 +329,14 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	 */
 	STORE_CALLER_SAVED()
 
-	/* Assess whether floating-point registers need to be saved. */
+	/* Save MEPC register and mstatus before we go any further */
+	csrr t0, mepc
+	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+
+	/* Save SOC-specific MSTATUS register */
+	csrr t0, mstatus
+	RV_OP_STOREREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+
 	csrr t0, mhartid
 #if defined(CONFIG_SMP_BASE_CPU) && (0 != CONFIG_SMP_BASE_CPU)
 	addi t0, t0, -CONFIG_SMP_BASE_CPU
@@ -350,13 +357,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 
 skip_store_fp_caller_saved:
 #endif /* defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) */
-	/* Save MEPC register */
-	csrr t0, mepc
-	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
-	/* Save SOC-specific MSTATUS register */
-	csrr t0, mstatus
-	RV_OP_STOREREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 	/*
 	 * Check if exception is the result of an interrupt or not.
 	 * (SOC dependent). Following the RISC-V architecture spec, the MSB
