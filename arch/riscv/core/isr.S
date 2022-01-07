@@ -345,6 +345,12 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	csrr t0, mstatus
 	RV_OP_STOREREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	/* Handle context saving at SOC level. */
+	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
+	jal ra, __soc_save_context
+#endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+
 	csrr t0, mhartid
 #if defined(CONFIG_SMP_BASE_CPU) && (0 != CONFIG_SMP_BASE_CPU)
 	addi t0, t0, -CONFIG_SMP_BASE_CPU
@@ -636,6 +642,13 @@ skip_store_fp_callee_saved:
 
 skip_load_fp_callee_saved:
 #endif
+
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	/* Restore context at SOC level */
+	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
+	jal ra, __soc_restore_context
+#endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+
 	/* Restore MEPC register */
 	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	csrw mepc, t0
@@ -662,6 +675,13 @@ skip_load_fp_caller_saved_resched:
 	SOC_ERET
 
 no_reschedule:
+
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	/* Restore context at SOC level */
+	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
+	jal ra, __soc_restore_context
+#endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+
 	/* Restore MEPC register */
 	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	csrw mepc, t0
