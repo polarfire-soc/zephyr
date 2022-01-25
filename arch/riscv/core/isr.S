@@ -386,7 +386,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	jal ra, __soc_is_irq
 
 	/* If a0 != 0, jump to is_interrupt */
-	addi t1, x0, 0 /* NOP ? - official is addi x0, x0, 0... */
+	addi t1, x0, 0 /* Signal that this is not irq offload */
 	bnez a0, is_interrupt
 
 	/*
@@ -442,6 +442,18 @@ is_kernel_syscall:
 	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	addi t0, t0, 4
 	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+
+#ifdef CONFIG_IRQ_OFFLOAD
+	/*
+	 * Determine if the system call is the result of an IRQ offloading.
+	 * Done by checking if _offload_routine is not pointing to NULL.
+	 * If NULL, jump to reschedule to perform a context-switch, otherwise,
+	 * jump to is_interrupt to handle the IRQ offload.
+	 */
+	la t0, _offload_routine
+	RV_OP_LOADREG t1, 0x00(t0)
+	bnez t1, is_interrupt
+#endif /* CONFIG_IRQ_OFFLOAD */
 
 	/*
 	 * Go to reschedule to handle context-switch - saved a0 and a1 have
@@ -508,6 +520,26 @@ on_irq_stack:
 	addi t3, t3, 1
 	sw t3, ___cpu_t_nested_OFFSET(t6)
 
+#ifdef CONFIG_IRQ_OFFLOAD
+	/*
+	 * If we are here due to a system call, t1 register should != 0.
+	 * In this case, perform IRQ offloading, otherwise jump to call_irq
+	 */
+	beqz t1, call_irq
+
+	/*
+	 * Call z_irq_do_offload to handle IRQ offloading.
+	 * Set return address to on_thread_stack in order to jump there
+	 * upon returning from z_irq_do_offload
+	 */
+	la ra, on_thread_stack
+	RV_OP_STOREREG t4, 0x08(sp)
+	RV_OP_STOREREG t5, 0x10(sp)
+	RV_OP_STOREREG t6, 0x18(sp)
+	tail z_irq_do_offload
+
+call_irq:
+#endif /* CONFIG_IRQ_OFFLOAD */
 	/* Get IRQ causing interrupt */
 	csrr a0, mcause
 	li t0, SOC_MCAUSE_EXP_MASK
@@ -538,11 +570,12 @@ on_irq_stack:
 	RV_OP_STOREREG t5, 0x10(sp)
 	RV_OP_STOREREG t6, 0x18(sp)
 	jalr ra, t1
+
+on_thread_stack:
 	RV_OP_LOADREG t4, 0x08(sp)
 	RV_OP_LOADREG t5, 0x10(sp)
 	RV_OP_LOADREG t6, 0x18(sp)
 
-on_thread_stack:
 	/* Decrement _kernel.cpus[x].nested variable */
 	lw t2, ___cpu_t_nested_OFFSET(t6)
 	addi t2, t2, -1
