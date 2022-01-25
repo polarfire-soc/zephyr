@@ -540,6 +540,15 @@ on_irq_stack:
 
 call_irq:
 #endif /* CONFIG_IRQ_OFFLOAD */
+#ifdef CONFIG_TRACING_ISR
+	RV_OP_STOREREG t4, 0x08(sp)
+	RV_OP_STOREREG t5, 0x10(sp)
+	RV_OP_STOREREG t6, 0x18(sp)
+	call sys_trace_isr_enter
+	RV_OP_LOADREG t4, 0x08(sp)
+	RV_OP_LOADREG t5, 0x10(sp)
+	RV_OP_LOADREG t6, 0x18(sp)
+#endif
 	/* Get IRQ causing interrupt */
 	csrr a0, mcause
 	li t0, SOC_MCAUSE_EXP_MASK
