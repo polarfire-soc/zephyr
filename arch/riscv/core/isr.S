@@ -594,6 +594,19 @@ on_thread_stack:
 	RV_OP_LOADREG t0, 0x00(sp)
 	addi sp, t0, 0
 
+#ifdef CONFIG_STACK_SENTINEL
+	call z_check_stack_sentinel
+	addi sp, sp, -32
+	RV_OP_STOREREG t4, 0x08(sp)
+	RV_OP_STOREREG t5, 0x10(sp)
+	RV_OP_STOREREG t6, 0x18(sp)
+	la t1, _kernel
+	RV_OP_LOADREG t4, 0x08(sp)
+	RV_OP_LOADREG t5, 0x10(sp)
+	RV_OP_LOADREG t6, 0x18(sp)
+	addi sp, sp, 32
+#endif
+#ifdef CONFIG_PREEMPT_ENABLED
 	/*
 	 * Check if we need to perform a reschedule.
      *
@@ -621,11 +634,26 @@ on_thread_stack:
 	/* Reload t4 with new thread pointer */
 	RV_OP_LOADREG t4, ___cpu_t_current_OFFSET(t6)
     j reschedule_irq
+#else
+	j no_reschedule
+#endif /* CONFIG_PREEMPT_ENABLED */
+
 reschedule:
     /*
      * Land here for arch_switch() so recover switch_to and switched_from
      * parameters 
      */
+#if CONFIG_INSTRUMENT_THREAD_SWITCHING
+	addi sp, sp, -32
+	RV_OP_STOREREG t4, 0x08(sp)
+	RV_OP_STOREREG t5, 0x10(sp)
+	RV_OP_STOREREG t6, 0x18(sp)
+	call z_thread_mark_switched_out
+	RV_OP_LOADREG t4, 0x08(sp)
+	RV_OP_LOADREG t5, 0x10(sp)
+	RV_OP_LOADREG t6, 0x18(sp)
+	addi sp, sp, 32
+#endif
 	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
 	RV_OP_LOADREG a1, __z_arch_esf_t_a1_OFFSET(sp)
 reschedule_irq:
@@ -685,6 +713,17 @@ skip_store_fp_callee_saved:
 skip_load_fp_callee_saved:
 #endif
 
+#if CONFIG_INSTRUMENT_THREAD_SWITCHING
+	addi sp, sp, -32
+	RV_OP_STOREREG t4, 0x08(sp)
+	RV_OP_STOREREG t5, 0x10(sp)
+	RV_OP_STOREREG t6, 0x18(sp)
+	call z_thread_mark_switched_in
+	RV_OP_LOADREG t4, 0x08(sp)
+	RV_OP_LOADREG t5, 0x10(sp)
+	RV_OP_LOADREG t6, 0x18(sp)
+	addi sp, sp, 32
+#endif
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Restore context at SOC level */
 	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
