@@ -769,17 +769,8 @@ skip_load_fp_caller_saved:
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t0, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t0
-	la t0, _kernel
-	add t0, t0, t1
-	RV_OP_LOADREG t0, ___cpu_t_current_OFFSET(t0)
-#else
 	la t0, _kernel
 	RV_OP_LOADREG t0, _kernel_offset_to_current(t0)
-#endif
 	RV_OP_LOADREG t0, _thread_offset_to_user_options(t0)
 	andi t0, t0, K_FP_REGS
 	RV_OP_STOREREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
@@ -808,17 +799,8 @@ skip_store_fp_caller_saved:
 	WAS_NOT_USER(t0, t1)
 	bnez t0, is_priv_sp
 
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t0, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t0
-	la t0, _kernel
-	add t0, t0, t1
-	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
-#else
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-#endif
 	/* Save user stack pointer */
 #ifdef CONFIG_PMP_STACK_GUARD
 	csrr t2, mscratch
@@ -1011,17 +993,8 @@ skip_fp_move_kernel_syscall:
 is_user_syscall:
 
 #ifdef CONFIG_PMP_STACK_GUARD
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t0, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t0
-	la t0, _kernel
-	add t0, t0, t1
-	RV_OP_LOADREG a0, ___cpu_t_current_OFFSET(t0)
-#else
 	la t0, _kernel
 	RV_OP_LOADREG a0, _kernel_offset_to_current(t0)
-#endif
 
 	jal ra, z_riscv_configure_stack_guard
 #endif /* CONFIG_PMP_STACK_GUARD */
@@ -1066,17 +1039,8 @@ skip_fp_copy_user_syscall:
 	RV_OP_LOADREG a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Switch to privilege stack */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t0, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t0
-	la t0, _kernel
-	add t0, t0, t1
-	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
-#else
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-#endif
 	RV_OP_LOADREG t0, _thread_offset_to_priv_stack_start(t1)
 	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t1) /* Update user SP */
 	addi sp, t0, CONFIG_PRIVILEGED_STACK_SIZE
@@ -1109,17 +1073,8 @@ return_from_syscall:
 
 no_reschedule_from_fault:
 	/* Restore User SP */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t0, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t0
-	la t0, _kernel
-	add t0, t0, t1
-	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
-#else
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-#endif
 	RV_OP_LOADREG sp, _thread_offset_to_user_sp(t1)
 
 	/* Update a0 (return value) */
@@ -1170,17 +1125,8 @@ is_interrupt:
 	addi t0, sp, 0
 
 	/* Switch to interrupt stack */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t2, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t2
-	la t2, _kernel
-	add t2, t2, t1
-	RV_OP_LOADREG sp, ___cpu_t_irq_stack_OFFSET(t2)
-#else
 	la t2, _kernel
 	RV_OP_LOADREG sp, _kernel_offset_to_irq_stack(t2)
-#endif
 
 	/*
 	 * Save thread stack pointer on interrupt stack
@@ -1189,28 +1135,14 @@ is_interrupt:
 	addi sp, sp, -16
 	RV_OP_STOREREG t0, 0x00(sp)
 #else
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t2, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t2
 	la t2, _kernel
-	add t2, t2, t1
-#else
-	la t2, _kernel
-#endif
 #endif /* !CONFIG_USERSPACE && !CONFIG_PMP_STACK_GUARD */
 
 on_irq_stack:
 	/* Increment _kernel.cpus[0].nested variable */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	lw t3, ___cpu_t_nested_OFFSET(t2)
-	addi t3, t3, 1
-	sw t3, ___cpu_t_nested_OFFSET(t2)
-#else
 	lw t3, _kernel_offset_to_nested(t2)
 	addi t3, t3, 1
 	sw t3, _kernel_offset_to_nested(t2)
-#endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/*
@@ -1263,26 +1195,12 @@ call_irq:
 
 on_thread_stack:
 	/* Get reference to _kernel */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t2, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t2
-	la t2, _kernel
-	add t1, t2, t1
-#else
 	la t1, _kernel
-#endif
 
 	/* Decrement _kernel.cpus[0].nested variable */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	lw t2, ___cpu_t_nested_OFFSET(t1)
-	addi t2, t2, -1
-	sw t2, ___cpu_t_nested_OFFSET(t1)
-#else
 	lw t2, _kernel_offset_to_nested(t1)
 	addi t2, t2, -1
 	sw t2, _kernel_offset_to_nested(t1)
-#endif
 #if !defined(CONFIG_USERSPACE) && !defined(CONFIG_PMP_STACK_GUARD)
 	/* Restore thread stack pointer */
 	RV_OP_LOADREG t0, 0x00(sp)
@@ -1290,16 +1208,8 @@ on_thread_stack:
 #endif /* !CONFIG_USERSPACE && !CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_STACK_SENTINEL
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	addi sp, sp, -16
-	sd t1, 0x00(sp)
-	call z_check_stack_sentinel
-	sd t1, 0x00(sp)
-	addi sp, sp, 16
-#else	
 	call z_check_stack_sentinel
 	la t1, _kernel
-#endif
 #endif
 
 #ifdef CONFIG_PREEMPT_ENABLED
@@ -1308,16 +1218,6 @@ on_thread_stack:
 	 */
 
 	/* Get pointer to _kernel.current */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	RV_OP_LOADREG t2, ___cpu_t_current_OFFSET (t1)
-
-	/*
-	 * Check if next thread to schedule is current thread.
-	 * If yes do not perform a reschedule
-	 */
-	la t4, _kernel
-	RV_OP_LOADREG t3, ___kernel_t_ready_q_OFFSET(t4)
-#else
 	RV_OP_LOADREG t2, _kernel_offset_to_current(t1)
 
 	/*
@@ -1325,18 +1225,13 @@ on_thread_stack:
 	 * If yes do not perform a reschedule
 	 */
 	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t1)
-#endif
 	beq t3, t2, no_reschedule
 #else
 	j no_reschedule
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 #ifdef CONFIG_PMP_STACK_GUARD
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	RV_OP_LOADREG a0, ___cpu_t_current_OFFSET (t1)
-#else
 	RV_OP_LOADREG a0, _kernel_offset_to_current(t1)
-#endif
 	jal ra, z_riscv_configure_stack_guard
 
 	/*
@@ -1408,20 +1303,11 @@ reschedule:
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
 	call z_thread_mark_switched_out
 #endif
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t0, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t0
-	la t0, _kernel
-	add t0, t0, t1
-	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
-#else
 	/* Get reference to _kernel */
 	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-#endif
 #ifdef CONFIG_USERSPACE
 	/*
 	 * Check the thread mode and skip callee saved storing
@@ -1470,20 +1356,12 @@ skip_callee_saved_reg:
 	sw t3, _thread_offset_to_swap_return_value(t1)
 
 	/* Get next thread to schedule. */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	la t1, _kernel
-#else
 	RV_OP_LOADREG t1, _kernel_offset_to_ready_q_cache(t0)
-#endif
 
 	/*
 	 * Set _kernel.current to new thread loaded in t1
 	 */
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
-#else
 	RV_OP_STOREREG t1, _kernel_offset_to_current(t0)
-#endif
 
 	/* Switch to new thread stack */
 	RV_OP_LOADREG sp, _thread_offset_to_sp(t1)
@@ -1593,17 +1471,8 @@ no_reschedule:
 	li t0, MSTATUS_MPRV
 	csrc mstatus, t0
 
-#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
-	csrr t0, mhartid
-	li t1, _CPU_STRUCT_SIZEOF
-	mul t1,t1,t0
-	la t0, _kernel
-	add t0, t0, t1
-	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
-#else
 	la t0, _kernel
 	RV_OP_LOADREG a0, _kernel_offset_to_current(t0)
-#endif
 	jal ra, z_riscv_configure_user_allowed_stack
 
 	/* Set user mode variable */
