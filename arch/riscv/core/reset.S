@@ -45,11 +45,11 @@ SECTION_FUNC(TEXT, __initialize)
     csrr a0, mhartid /* Who are we? */
 	/* First stage of wake up - we assume for MPFS and other systems with monitor hart 
 	 * that array has CONFIG_MP_NUM_CPUS + 1 */
-	slli a1, a0, 3
+	slli a1, a0, RV_REGSHIFT
 	la a2, hart_wake_flags
 	add a2, a2, a1
 	li a1, RV_WAKE_INIT
-	sd a1, 0(a2)
+	RV_OP_STOREREG a1, 0(a2)
 #if CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR
 /*
  * For SMP operation the monitor hart cannot be part of the SMP group
@@ -113,15 +113,15 @@ not_monitor_hart:
 	 * hart so if this is selected as the hart to use we don't touch mxdeleg registers.
 	 * Also, if not in master mode this is a bad thing to do...
      */
-#if NO_SUPERVISOR_DELEGATION
+#if CONFIG_NO_SUPERVISOR_DELEGATION
 #if CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR
-	bne a0, a1, not_super_capable /* regs set up earlier... */
+	beq a0, a1, not_super_capable /* regs set up earlier... */
 #endif /* CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR */
     csrw mideleg,0
     csrw medeleg,0
 
 not_super_capable:
-#endif /* NO_SUPERVISOR_DELEGATION */
+#endif /* CONFIG_NO_SUPERVISOR_DELEGATION */
 
 #ifdef CONFIG_FPU
 	/*
@@ -178,7 +178,7 @@ skip_stack_fill:
 #endif /* CONFIG_SMP */
 	add sp, sp, t0
 
-	csrw mscratch, sp
+	csrw mscratch, sp /* mscratch contains address of interrupt stack now */
 
 #ifdef CONFIG_WDOG_INIT
 	call _WdogInit
@@ -191,7 +191,7 @@ skip_stack_fill:
 #if CONFIG_SMP
 	/* Second stage of wake up - a2 already set up */
 	li a1, RV_WAKE_WAIT
-	sd a1, 0(a2)
+	RV_OP_STOREREG a1, 0(a2)
 	li a0, RV_WAKE_GO
 #endif	/* CONFIG_SMP */
 	/*
@@ -203,13 +203,13 @@ skip_stack_fill:
 loop_slave_core:
 	wfi
 #if CONFIG_SMP
-	ld a1, 0(a2)
+	RV_OP_LOADREG a1, 0(a2)
 	bne a0, a1, loop_slave_core
 	/*
 	 * Jump into C domain assuming _PrepC has already been called.
 	 */
 	li a1, RV_WAKE_DONE
-	sd a1, 0(a2)
+	RV_OP_STOREREG a1, 0(a2)
 	la t0, riscv_cpu_sp
 	ld t0, 0(t0)
 	addi sp, t0, 0

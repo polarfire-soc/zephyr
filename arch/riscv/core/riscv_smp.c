@@ -38,7 +38,7 @@ volatile struct {
 #define WAKE_FLAG_COUNT (CONFIG_MP_TOTAL_NUM_CPUS)
 
 /* we will index directly off of mhartid so need to be careful... */
-volatile __noinit uint64_t hart_wake_flags[WAKE_FLAG_COUNT];
+volatile __noinit ulong_t hart_wake_flags[WAKE_FLAG_COUNT];
 
 volatile char *riscv_cpu_sp;
 /*
@@ -120,7 +120,7 @@ static void sched_ipi_handler(const void *unused)
 
 void arch_sched_ipi(void)
 {
-    uint32_t i;
+    ulong_t i;
 
     /* broadcast sched_ipi request to other cores
      * if the target is current core, hardware will ignore it
@@ -148,73 +148,3 @@ static int riscv_smp_init(const struct device *dev)
 SYS_INIT(riscv_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif
-
-
-#if 0
-/* arch implementation of sched_ipi */
-void arch_sched_ipi(void)
-{
-	uint32_t i;
-
-	/* broadcast sched_ipi request to other cores
-	 * if the target is current core, hardware will ignore it
-	 */
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		z_arc_connect_ici_generate(i);
-	}
-}
-
-static int arc_smp_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	struct arc_connect_bcr bcr;
-
-	/* necessary master core init */
-	_curr_cpu[0] = &(_kernel.cpus[0]);
-
-	bcr.val = z_arc_v2_aux_reg_read(_ARC_V2_CONNECT_BCR);
-
-	if (bcr.ipi) {
-	/* register ici interrupt, just need master core to register once */
-		z_arc_connect_ici_clear();
-		IRQ_CONNECT(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY,
-		    sched_ipi_handler, NULL, 0);
-
-		irq_enable(IRQ_ICI);
-	} else {
-		__ASSERT(0,
-			"ARC connect has no inter-core interrupt\n");
-		return -ENODEV;
-	}
-
-	if (bcr.dbg) {
-	/* configure inter-core debug unit if available */
-		uint32_t core_mask = (1 << CONFIG_MP_NUM_CPUS) - 1;
-		z_arc_connect_debug_select_set(core_mask);
-		/* Debugger halt cores at conditions */
-		z_arc_connect_debug_mask_set(core_mask,	(ARC_CONNECT_CMD_DEBUG_MASK_SH
-			| ARC_CONNECT_CMD_DEBUG_MASK_BH | ARC_CONNECT_CMD_DEBUG_MASK_AH
-			| ARC_CONNECT_CMD_DEBUG_MASK_H));
-
-	}
-
-	if (bcr.gfrc) {
-		/* global free running count init */
-		z_arc_connect_gfrc_enable();
-
-		/* when all cores halt, gfrc halt */
-		z_arc_connect_gfrc_core_set((1 << CONFIG_MP_NUM_CPUS) - 1);
-		z_arc_connect_gfrc_clear();
-	} else {
-		__ASSERT(0,
-			"ARC connect has no global free running counter\n");
-		return -ENODEV;
-	}
-
-	return 0;
-}
-
-SYS_INIT(arc_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif
-
-

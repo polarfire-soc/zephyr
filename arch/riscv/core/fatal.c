@@ -88,27 +88,29 @@ static char *cause_str(ulong_t cause)
 
 void _Fault(z_arch_esf_t *esf)
 {
+	ulong_t mcause;
+#ifndef CONFIG_SOC_OPENISA_RV32M1_RISCV32
+	ulong_t mtval;
+#endif
 #ifdef CONFIG_USERSPACE
 	/*
 	 * Perform an assessment whether an PMP fault shall be
 	 * treated as recoverable.
 	 */
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
-		uint32_t start = (uint32_t)exceptions[i].start;
-		uint32_t end = (uint32_t)exceptions[i].end;
+		ulong_t start = (ulong_t)exceptions[i].start;
+		ulong_t end = (ulong_t)exceptions[i].end;
 
 		if (esf->mepc >= start && esf->mepc < end) {
-			esf->mepc = (uint32_t)exceptions[i].fixup;
+			esf->mepc = (ulong_t)exceptions[i].fixup;
 			return;
 		}
 	}
 #endif /* CONFIG_USERSPACE */
-	ulong_t mcause;
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 
 #ifndef CONFIG_SOC_OPENISA_RV32M1_RISCV32
-	ulong_t mtval;
 	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
 #endif
 

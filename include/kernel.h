@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <toolchain.h>
 #include <tracing/tracing_macros.h>
-
+#include <zephyr/types.h>
 #ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
 #include <timing/timing.h>
 #endif
