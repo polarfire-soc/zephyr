@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 
-#define STACKSIZE 1024
+#define STACKSIZE 2048
 
 /* Priority level of the threads used in this test.
  * The priority level, itself, is arbitrary; we only
