@@ -22,7 +22,11 @@ GTEXT(z_riscv_user_string_nlen_fault_end)
 GTEXT(z_riscv_user_string_nlen_fixup)
 GTEXT(z_riscv_do_syscall_start)
 GTEXT(z_riscv_do_syscall_end)
-
+#if CONFIG_SMP
+GTEXT(arch_is_user_context)
+GTEXT(z_riscv_is_user_start)
+GTEXT(z_riscv_is_user_end)
+#endif /* CONFIG_SMP */
 /* Imports */
 GDATA(_k_syscall_table)
 
@@ -40,6 +44,15 @@ SECTION_FUNC(TEXT,z_riscv_do_syscall)
 z_riscv_do_syscall_start:
 	ECALL
 z_riscv_do_syscall_end:
+	ret
+
+#if CONFIG_SMP
+SECTION_FUNC(TEXT,arch_is_user_context)
+z_riscv_do_is_user_start:
+	ECALL
+z_riscv_do_is_user_end:
+	ret
+#endif
 
 /*
  * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)

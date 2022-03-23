@@ -17,8 +17,12 @@
  * Glogal variable used to know the current mode running.
  * Is not boolean because it must match the PMP granularity of the arch.
  */
+#if CONFIG_SMP
+ulong_t irq_flag[CONFIG_MP_TOTAL_NUM_CPUS];
+#else
 ulong_t is_user_mode;
 bool irq_flag;
+#endif
 #endif
 
 void z_thread_entry_wrapper(k_thread_entry_t thread,
@@ -261,7 +265,9 @@ FUNC_NORETURN void z_riscv_user_mode_enter_syscall(k_thread_entry_t user_entry,
 	z_riscv_init_user_accesses(_current);
 	z_riscv_configure_user_allowed_stack(_current);
 
+#if !CONFIG_SMP
 	is_user_mode = true;
+#endif
 
 	__asm__ volatile ("mv a0, %1"
 			  : "=r" (user_entry)

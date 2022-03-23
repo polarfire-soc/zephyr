@@ -148,12 +148,15 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 	return a0;
 }
 
+#if !CONFIG_SMP
 static inline bool arch_is_user_context(void)
 {
 	/* Defined in arch/riscv/core/thread.c */
 	extern ulong_t is_user_mode;
 	return is_user_mode;
-}
+#else
+bool arch_is_user_context(void);
+#endif /* !CONFIG_SMP */
 
 #ifdef __cplusplus
 }

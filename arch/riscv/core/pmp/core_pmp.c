@@ -14,7 +14,9 @@
 #define PMP_SLOT_NUMBER	CONFIG_PMP_SLOT
 
 #ifdef CONFIG_USERSPACE
+#if !CONFIG_SMP
 extern ulong_t is_user_mode;
+#endif
 #endif
 
 enum {
@@ -243,8 +245,10 @@ void z_riscv_init_user_accesses(struct k_thread *thread)
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 	/* MCU state */
+#if !CONFIG_SMP
 	thread->arch.u_pmpaddr[index] = TO_PMP_ADDR((ulong_t) &is_user_mode);
 	uchar_pmpcfg[index++] = PMP_NA4 | PMP_R;
+#endif
 #if defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
 	/* Program and RO data */
 	thread->arch.u_pmpaddr[index] = TO_PMP_NAPOT(rom_start, rom_size);

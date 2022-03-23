@@ -528,8 +528,11 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
  *
  * @return true if the CPU is currently running with user permissions
  */
+#if CONFIG_SMP && CONFIG_RISCV
+bool arch_is_user_context(void);
+#else
 static inline bool arch_is_user_context(void);
-
+#endif
 /**
  * @brief Get the maximum number of partitions for a memory domain
  *
