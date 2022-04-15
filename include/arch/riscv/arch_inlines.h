@@ -17,7 +17,7 @@
 static inline struct _cpu *arch_curr_cpu(void)
 {
 #if defined(CONFIG_SMP)
-	unsigned int hart_id;
+	ulong_t hart_id;
 
 	__asm__ volatile("csrr %0, mhartid" : "=r" (hart_id));
 

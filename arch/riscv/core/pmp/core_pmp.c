@@ -191,7 +191,7 @@ int pmp_get(unsigned int index, ulong_t *cfg_val, ulong_t *addr_val)
 #ifdef CONFIG_64BIT
 	pmpcfg_csr = CSR_PMPCFG0 + (index >> 4);
 	shift = (index & 0x0007) << 3;
-#else
+#else  /* CONFIG_64BIT */
 	pmpcfg_csr = CSR_PMPCFG0 + (index >> 2);
 	shift = (index & 0x0003) << 3;
 #endif /* CONFIG_64BIT */
@@ -205,8 +205,13 @@ int pmp_get(unsigned int index, ulong_t *cfg_val, ulong_t *addr_val)
 
 void z_riscv_pmp_clear_config(void)
 {
+#ifdef CONFIG_64BIT
+	for (unsigned int i = 0; i < RISCV_PMP_CFG_NUM; i++)
+		csr_write_enum(CSR_PMPCFG0 + (i * 2), 0);
+#else
 	for (unsigned int i = 0; i < RISCV_PMP_CFG_NUM; i++)
 		csr_write_enum(CSR_PMPCFG0 + i, 0);
+#endif /* CONFIG_64BIT */
 }
 
 /* Function to help debug */
@@ -241,14 +246,20 @@ void z_riscv_init_user_accesses(struct k_thread *thread)
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
 
 #ifdef CONFIG_PMP_STACK_GUARD
-	index++;
+	index++; /* Step over pinned PMP0 */
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 	/* MCU state */
 #if !CONFIG_SMP
+#ifdef CONFIG_64BIT
+	thread->arch.u_pmpaddr[index] = TO_PMP_NAPOT(&is_user_mode,
+		sizeof(is_user_mode));
+	uchar_pmpcfg[index++] = PMP_NAPOT | PMP_R;
+#else /* CONFIG_64BIT */
 	thread->arch.u_pmpaddr[index] = TO_PMP_ADDR((ulong_t) &is_user_mode);
 	uchar_pmpcfg[index++] = PMP_NA4 | PMP_R;
-#endif
+#endif /* CONFIG_64BIT */
+#endif /* !CONFIG_SMP */
 #if defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
 	/* Program and RO data */
 	thread->arch.u_pmpaddr[index] = TO_PMP_NAPOT(rom_start, rom_size);
@@ -284,8 +295,13 @@ void z_riscv_configure_user_allowed_stack(struct k_thread *thread)
 	for (i = 0U; i < CONFIG_PMP_SLOT; i++)
 		csr_write_enum(CSR_PMPADDR0 + i, thread->arch.u_pmpaddr[i]);
 
+#ifdef CONFIG_64BIT
+	for (i = 0U; i < RISCV_PMP_CFG_NUM; i++)
+		csr_write_enum(CSR_PMPCFG0 + (i *2), thread->arch.u_pmpcfg[i]);
+#else /* CONFIG_64BIT */
 	for (i = 0U; i < RISCV_PMP_CFG_NUM; i++)
 		csr_write_enum(CSR_PMPCFG0 + i, thread->arch.u_pmpcfg[i]);
+#endif /* CONFIG_64BIT */
 }
 
 void z_riscv_pmp_add_dynamic(struct k_thread *thread,
@@ -548,7 +564,7 @@ void z_riscv_init_stack_guard(struct k_thread *thread)
 
 	uchar_pmpcfg = (unsigned char *) thread->arch.s_pmpcfg;
 
-	uchar_pmpcfg++;
+	uchar_pmpcfg++; /* Step over pinned irq stack guard */
 
 	/* stack guard: None */
 	thread->arch.s_pmpaddr[index] = TO_PMP_ADDR(thread->stack_info.start);
@@ -601,8 +617,14 @@ void z_riscv_configure_stack_guard(struct k_thread *thread)
 	for (i = 0U; i < PMP_REGION_NUM_FOR_STACK_GUARD; i++)
 		csr_write_enum(CSR_PMPADDR1 + i, thread->arch.s_pmpaddr[i]);
 
+#ifdef CONFIG_64BIT
+	/* For 64 bit, only every second config register exists... */
+	for (i = 0U; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)
+		csr_write_enum(CSR_PMPCFG0 + (i * 2), thread->arch.s_pmpcfg[i]);
+#else /* CONFIG_64BIT */
 	for (i = 0U; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)
 		csr_write_enum(CSR_PMPCFG0 + i, thread->arch.s_pmpcfg[i]);
+#endif /* CONFIG_64BIT */
 
 	/* Enable PMP for machine mode */
 	csr_set(mstatus, MSTATUS_MPRV);

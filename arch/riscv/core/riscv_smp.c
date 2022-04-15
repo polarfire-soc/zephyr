@@ -109,7 +109,7 @@ void z_riscv_secondary_start(int cpu_num)
 #if defined(CONFIG_SCHED_IPI_SUPPORTED)
 static void sched_ipi_handler(const void *unused)
 {
-    unsigned int hart_id;
+    ulong_t hart_id;
 
     ARG_UNUSED(unused);
 

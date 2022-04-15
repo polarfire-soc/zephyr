@@ -32,9 +32,9 @@
 
 #ifdef CONFIG_RISCV_PMP
 #ifdef CONFIG_64BIT
-#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOT >> 3)
+#define	RISCV_PMP_CFG_NUM	((CONFIG_PMP_SLOT + 7) >> 3)
 #else
-#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOT >> 2)
+#define	RISCV_PMP_CFG_NUM	((CONFIG_PMP_SLOT + 3) >> 2)
 #endif
 #endif
 
@@ -47,7 +47,11 @@
  *   1 for other address space: RWX
  */
 #define PMP_REGION_NUM_FOR_STACK_GUARD	6
+#ifdef CONFIG_64BIT
+#define PMP_CFG_CSR_NUM_FOR_STACK_GUARD	1
+#else /* CONFIG_64BIT */
 #define PMP_CFG_CSR_NUM_FOR_STACK_GUARD	2
+#endif /* CONFIG_64BIT */
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
