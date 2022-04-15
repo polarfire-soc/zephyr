@@ -724,7 +724,6 @@ is_interrupt:
 	RV_OP_STOREREG t1, 0x00(t0)
 #endif /* CONFIG_USERSPACE */
 
-#if 1 /*--------------------------------------------------------------------------------------------------------*/
 	/* Assess whether floating-point registers need to be saved. */
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	RV_OP_LOADREG t0, _thread_offset_to_user_options(t4)
@@ -736,7 +735,6 @@ is_interrupt:
 
 skip_store_fp_caller_saved_3:
 #endif /* defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) */
-#endif /*--------------------------------------------------------------------------------------------------------*/
 
 #if (CONFIG_USERSPACE == 0) && (CONFIG_PMP_STACK_GUARD == 0)
 	/*
@@ -845,12 +843,11 @@ on_thread_stack:
 #endif /* !defined(CONFIG_USERSPACE) && !defined(CONFIG_PMP_STACK_GUARD) */
 
 #ifdef CONFIG_STACK_SENTINEL
-	call z_check_stack_sentinel
 	addi sp, sp, -32
 	RV_OP_STOREREG t4, 0x08(sp)
 	RV_OP_STOREREG t5, 0x10(sp)
 	RV_OP_STOREREG t6, 0x18(sp)
-	la t1, _kernel
+	call z_check_stack_sentinel
 	RV_OP_LOADREG t4, 0x08(sp)
 	RV_OP_LOADREG t5, 0x10(sp)
 	RV_OP_LOADREG t6, 0x18(sp)
@@ -931,7 +928,26 @@ reschedule:
 #endif
 	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
 	RV_OP_LOADREG a1, __z_arch_esf_t_a1_OFFSET(sp)
+#if CONFIG_INSTRUMENT_THREAD_SWITCHING
+	j do_reschedule
+#endif
 reschedule_irq:
+#if CONFIG_INSTRUMENT_THREAD_SWITCHING
+	addi sp, sp, -48
+	RV_OP_STOREREG t4, 0x08(sp)
+	RV_OP_STOREREG t5, 0x10(sp)
+	RV_OP_STOREREG t6, 0x18(sp)
+	RV_OP_STOREREG a0, 0x20(sp)
+	RV_OP_STOREREG a1, 0x28(sp)
+	call z_thread_mark_switched_out
+	RV_OP_LOADREG t4, 0x08(sp)
+	RV_OP_LOADREG t5, 0x10(sp)
+	RV_OP_LOADREG t6, 0x18(sp)
+	RV_OP_LOADREG a0, 0x20(sp)
+	RV_OP_LOADREG a1, 0x28(sp)
+	addi sp, sp, 48
+#endif
+do_reschedule:
     /* Land here if switching after IRQ so parameters set up already...
      * Convert switched_from back to thread pointer as the 
      * thread handle is actually the thread address in our implementation.
