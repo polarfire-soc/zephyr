@@ -632,13 +632,17 @@ void z_riscv_configure_stack_guard(struct k_thread *thread)
 
 void z_riscv_configure_interrupt_stack_guard(void)
 {
+	ulong_t hart_id;
+
+    __asm__ volatile("csrr %0, mhartid" : "=r" (hart_id));
+	/* Pin PMP0 to the stack guard block */
 	if (PMP_GUARD_ALIGN_AND_SIZE > 4) {
 		z_riscv_pmp_set(0, PMP_NAPOT | PMP_L,
-			(ulong_t) z_interrupt_stacks[0] |
+			(ulong_t) z_interrupt_stacks[hart_id] |
 			TO_NAPOT_RANGE(PMP_GUARD_ALIGN_AND_SIZE));
 	} else {
 		z_riscv_pmp_set(0, PMP_NA4 | PMP_L,
-			(ulong_t) z_interrupt_stacks[0]);
+			(ulong_t) z_interrupt_stacks[hart_id]);
 	}
 }
 #endif /* CONFIG_PMP_STACK_GUARD */
@@ -649,7 +653,6 @@ void z_riscv_pmp_init_thread(struct k_thread *thread)
 {
 	unsigned char i;
 	ulong_t *pmpcfg;
-
 #if defined(CONFIG_PMP_STACK_GUARD)
 	pmpcfg = thread->arch.s_pmpcfg;
 	for (i = 0U; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)

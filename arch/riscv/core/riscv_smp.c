@@ -100,6 +100,10 @@ void z_riscv_secondary_start(int cpu_num)
 #if defined(CONFIG_SCHED_IPI_SUPPORTED)
     irq_enable(RISCV_MACHINE_SOFT_IRQ);
 #endif
+#ifdef CONFIG_PMP_STACK_GUARD
+	z_riscv_configure_interrupt_stack_guard();
+#endif
+
 	/* call the function set by arch_start_cpu */
 	fn = riscv_cpu_init[cpu_num].fn;
 

@@ -32,6 +32,7 @@ CONFIG_HAS_MONITOR_HART=y
 # Do this for now as some early versions of the HSS can leave the
 # PMP registers un-configured.
 CONFIG_CLEAR_PMP_REGS=y
+CONFIG_PMP_SLOT=16
 # Steer clear of e51
 CONFIG_HART_TO_USE=1
 CONFIG_SET_SUPERVISOR_HANDLER=y
