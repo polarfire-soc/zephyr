@@ -119,8 +119,13 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 #endif /* CONFIG_RISCV_ISA_RV32E */
 		EXCEPTION_DUMP("     sp: " PR_REG, z_riscv_get_sp_before_exc(esf));
 		EXCEPTION_DUMP("     ra: " PR_REG, esf->ra);
-		EXCEPTION_DUMP("   mepc: " PR_REG, esf->mepc);
-		EXCEPTION_DUMP("mstatus: " PR_REG, esf->mstatus);
+#if defined(CONFIG_RISCV_S_MODE)
+		EXCEPTION_DUMP("   sepc: " PR_REG, esf->xepc);
+		EXCEPTION_DUMP("sstatus: " PR_REG, esf->xstatus);
+#else
+		EXCEPTION_DUMP("   mepc: " PR_REG, esf->xepc);
+		EXCEPTION_DUMP("mstatus: " PR_REG, esf->xstatus);
+#endif
 		EXCEPTION_DUMP("");
 	}
 

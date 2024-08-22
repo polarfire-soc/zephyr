@@ -59,7 +59,7 @@ void arch_secondary_cpu_init(int hartid)
 			cpu_num = i;
 		}
 	}
-	csr_write(mscratch, &_kernel.cpus[cpu_num]);
+	csr_write(xscratch, &_kernel.cpus[cpu_num]);
 #ifdef CONFIG_SMP
 	_kernel.cpus[cpu_num].arch.online = true;
 #endif
@@ -73,11 +73,11 @@ void arch_secondary_cpu_init(int hartid)
 	z_riscv_pmp_init();
 #endif
 #ifdef CONFIG_SMP
-	irq_enable(RISCV_IRQ_MSOFT);
+	irq_enable(RISCV_IRQ_SOFT);
 #endif /* CONFIG_SMP */
 #ifdef CONFIG_PLIC_IRQ_AFFINITY
 	/* Enable on secondary cores so that they can respond to PLIC */
-	irq_enable(RISCV_IRQ_MEXT);
+	irq_enable(RISCV_IRQ_EXT);
 #endif /* CONFIG_PLIC_IRQ_AFFINITY */
 #ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();

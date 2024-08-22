@@ -60,7 +60,7 @@
 
 	.macro get_current_cpu dst
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
-	csrr \dst, mscratch
+	csrr \dst, xscratch
 #else
 	la \dst, _kernel + ___kernel_t_cpus_OFFSET
 #endif
@@ -200,17 +200,17 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 
 #ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
 	/* Save mcause register */
-	csrr t0, mcause
-	sr t0, __struct_arch_esf_mcause_OFFSET(sp)
+	csrr t0, xcause
+	sr t0, __struct_arch_esf_xcause_OFFSET(sp)
 #endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL */
 
 	/* Save MEPC register */
-	csrr t0, mepc
-	sr t0, __struct_arch_esf_mepc_OFFSET(sp)
+	csrr t0, xepc
+	sr t0, __struct_arch_esf_xepc_OFFSET(sp)
 
 	/* Save MSTATUS register */
-	csrr t2, mstatus
-	sr t2, __struct_arch_esf_mstatus_OFFSET(sp)
+	csrr t2, xstatus
+	sr t2, __struct_arch_esf_xstatus_OFFSET(sp)
 
 #if defined(CONFIG_FPU_SHARING)
 	/* determine if FPU access was disabled */
@@ -335,7 +335,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	jal ra, __soc_is_irq
 	bnez a0, is_interrupt
 #else
-	csrr t0, mcause
+	csrr t0, xcause
 	srli t0, t0, RISCV_MCAUSE_IRQ_POS
 	bnez t0, is_interrupt
 #endif
@@ -345,7 +345,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * perform a context-switch or an IRQ offload. Otherwise call z_riscv_fault
 	 * to report the exception.
 	 */
-	csrr t0, mcause
+	csrr t0, xcause
 	li t2, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and t0, t0, t2
 
@@ -353,7 +353,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * If mcause == RISCV_EXC_ECALLM, handle system call from
 	 * kernel thread.
 	 */
-	li t1, RISCV_EXC_ECALLM
+	li t1, RISCV_EXC_ECALL
 	beq t0, t1, is_kernel_syscall
 
 #ifdef CONFIG_USERSPACE
@@ -401,9 +401,9 @@ is_kernel_syscall:
 	 * It's safe to always increment by 4, even with compressed
 	 * instructions, because the ecall instruction is always 4 bytes.
 	 */
-	lr t0, __struct_arch_esf_mepc_OFFSET(sp)
+	lr t0, __struct_arch_esf_xepc_OFFSET(sp)
 	addi t0, t0, 4
-	sr t0, __struct_arch_esf_mepc_OFFSET(sp)
+	sr t0, __struct_arch_esf_xepc_OFFSET(sp)
 
 #if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 	/* Re-activate PMP for m-mode */
@@ -532,9 +532,9 @@ is_user_syscall:
 	 * Same as for is_kernel_syscall: increment saved MEPC by 4 to
 	 * prevent triggering the same ecall again upon exiting the ISR.
 	 */
-	lr t1, __struct_arch_esf_mepc_OFFSET(sp)
+	lr t1, __struct_arch_esf_xepc_OFFSET(sp)
 	addi t1, t1, 4
-	sr t1, __struct_arch_esf_mepc_OFFSET(sp)
+	sr t1, __struct_arch_esf_xepc_OFFSET(sp)
 
 	/* Restore argument registers from user stack */
 	lr a0, __struct_arch_esf_a0_OFFSET(sp)
@@ -592,7 +592,7 @@ is_interrupt:
 	 * If we came from userspace then we need to reconfigure the
 	 * PMP for kernel mode stack guard.
 	 */
-	lr t0, __struct_arch_esf_mstatus_OFFSET(sp)
+	lr t0, __struct_arch_esf_xstatus_OFFSET(sp)
 	li t1, MSTATUS_MPP
 	and t0, t0, t1
 	bnez t0, 1f
@@ -636,7 +636,7 @@ on_irq_stack:
 #endif
 
 	/* Get IRQ causing interrupt */
-	csrr a0, mcause
+	csrr a0, xcause
 	li t0, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and a0, a0, t0
 
@@ -741,8 +741,8 @@ fp_trap_exit:
 #endif
 
 	/* Restore MEPC and MSTATUS registers */
-	lr t0, __struct_arch_esf_mepc_OFFSET(sp)
-	lr t2, __struct_arch_esf_mstatus_OFFSET(sp)
+	lr t0, __struct_arch_esf_xepc_OFFSET(sp)
+	lr t2, __struct_arch_esf_xstatus_OFFSET(sp)
 
 #ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
 	/* Restore MCAUSE register for previous interrupt level. */
@@ -750,8 +750,8 @@ fp_trap_exit:
 	csrw mcause, t1
 #endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL */
 
-	csrw mepc, t0
-	csrw mstatus, t2
+	csrw xepc, t0
+	csrw xstatus, t2
 
 #ifdef CONFIG_USERSPACE
 	/*
@@ -809,4 +809,4 @@ fp_trap_exit:
 
 #endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
-	mret
+	xret

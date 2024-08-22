@@ -28,7 +28,7 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 	/* Clear exception number from CSR mip register */
 	li t1, 1
 	sll t0, t1, a0
-	csrrc t1, mip, t0
+	csrrc t1, xip, t0
 
 	/* Return */
 	ret

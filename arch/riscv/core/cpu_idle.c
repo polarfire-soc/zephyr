@@ -13,7 +13,7 @@ void arch_cpu_idle(void)
 	sys_trace_idle();
 	__asm__ volatile("wfi");
 	sys_trace_idle_exit();
-	irq_unlock(MSTATUS_IEN);
+	irq_unlock(XSTATUS_IEN);
 }
 #endif
 

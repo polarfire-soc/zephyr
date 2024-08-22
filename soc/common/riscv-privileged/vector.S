@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/toolchain.h>
+#include "zephyr/arch/riscv/csr.h"
 
 /* exports */
 GTEXT(__start)
@@ -47,7 +48,7 @@ SECTION_FUNC(vectors, __start)
 	add t0, zero, zero
 #endif
 	addi t0, t0, 0x03 /* Enable CLIC vectored mode by setting LSB */
-	csrw mtvec, t0
+	csrw xtvec, t0
 
 	/*
 	 * CLIC vectored mode has a similar concept to CLINT vectored mode,
@@ -80,7 +81,7 @@ SECTION_FUNC(vectors, __start)
 	 */
 	la t0, _irq_vector_table /* Load address of interrupt vector table */
 	addi t0, t0, 0x01 /* Enable vectored mode by setting LSB */
-	csrw mtvec, t0
+	csrw xtvec, t0
 
 #endif /* CONFIG_RISCV_HAS_CLIC */
 
@@ -101,7 +102,7 @@ SECTION_FUNC(vectors, __start)
 	 * to _isr_wrapper.
 	 */
 	la t0, _isr_wrapper
-	csrw mtvec, t0
+	csrw xtvec, t0
 
 #endif /* CONFIG_RISCV_HAS_CLIC&& !CONFIG_LEGACY_CLIC */
 

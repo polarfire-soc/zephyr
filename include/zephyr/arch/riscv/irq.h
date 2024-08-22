@@ -125,14 +125,14 @@ extern void __soc_handle_irq(unsigned long mcause);
 static inline void arch_isr_direct_footer(int swap)
 {
 	ARG_UNUSED(swap);
-	unsigned long mcause;
+	unsigned long cause;
 
 	/* Get the IRQ number */
-	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
-	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
+	cause = csr_read(xcause);
+	cause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 
 	/* Clear the pending IRQ */
-	__soc_handle_irq(mcause);
+	__soc_handle_irq(cause);
 
 	/* We are not in the ISR anymore */
 	--(arch_curr_cpu()->nested);
