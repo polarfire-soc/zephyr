@@ -233,4 +233,26 @@
 				: "memory");			\
 })
 
+#if CONFIG_RISCV_S_MODE
+#define xscratch	sscratch
+#define xstatus		sstatus
+#define xepc		sepc
+#define xcause		scause
+#define xtval		stval
+#define xtvec		stvec
+#define xip		sip
+#define xie		sie
+#define xret		sret
+#else
+#define xscratch	mscratch
+#define xstatus		mstatus
+#define xepc		mepc
+#define xcause		mcause
+#define xtval		mtval
+#define xtvec		mtvec
+#define xip		mip
+#define xie		mie
+#define xret		mret
+#endif
+
 #endif /* CSR_H_ */
