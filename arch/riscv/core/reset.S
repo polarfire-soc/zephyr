@@ -9,6 +9,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/offsets.h>
+#include <zephyr/arch/riscv/csr.h>
 #include "asm_macros.inc"
 
 /* exports */
@@ -38,7 +39,9 @@ SECTION_FUNC(reset, __reset)
  * the C domain
  */
 SECTION_FUNC(TEXT, __initialize)
+#ifndef CONFIG_RISCV_SBI_BOOT
 	csrr a0, mhartid
+#endif
 	li t0, CONFIG_RV_BOOT_HART
 	beq a0, t0, boot_first_core
 	j boot_secondary_core

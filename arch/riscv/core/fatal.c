@@ -79,8 +79,13 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 #endif /* CONFIG_RISCV_ISA_RV32E */
 		LOG_ERR("     sp: " PR_REG, z_riscv_get_sp_before_exc(esf));
 		LOG_ERR("     ra: " PR_REG, esf->ra);
-		LOG_ERR("   mepc: " PR_REG, esf->mepc);
-		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
+#if defined(CONFIG_RISCV_S_MODE)
+		LOG_ERR("   sepc: " PR_REG, esf->xepc);
+		LOG_ERR("sstatus: " PR_REG, esf->xstatus);
+#else
+		LOG_ERR("   mepc: " PR_REG, esf->xepc);
+		LOG_ERR("mstatus: " PR_REG, esf->xstatus);
+#endif
 		LOG_ERR("");
 	}
 
@@ -207,20 +212,29 @@ void _Fault(struct arch_esf *esf)
 	}
 #endif /* CONFIG_USERSPACE */
 
-	unsigned long mcause;
+	unsigned long cause;
 
-	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
+	cause = csr_read(xcause);
 
 #ifndef CONFIG_SOC_OPENISA_RV32M1
-	unsigned long mtval;
-	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
+	unsigned long tval;
+	tval = csr_read(xtval);
+#endif
+	cause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
+	LOG_ERR("");
+
+#ifdef CONFIG_RISCV_S_MODE
+	LOG_ERR(" scause: %ld, %s", cause, cause_str(cause));
+#else
+	LOG_ERR(" mcause: %ld, %s", cause, cause_str(cause));
 #endif
 
-	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
-	LOG_ERR("");
-	LOG_ERR(" mcause: %ld, %s", mcause, cause_str(mcause));
 #ifndef CONFIG_SOC_OPENISA_RV32M1
-	LOG_ERR("  mtval: %lx", mtval);
+#ifdef CONFIG_RISCV_S_MODE
+	LOG_ERR("  stval: %lx", tval);
+#else
+	LOG_ERR("  mtval: %lx", tval);
+#endif
 #endif
 
 	unsigned int reason = K_ERR_CPU_EXCEPTION;

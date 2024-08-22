@@ -30,7 +30,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	__asm__ volatile ("li tp, 0");
 #endif
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
-	csr_write(mscratch, &_kernel.cpus[0]);
+	csr_write(xscratch, &_kernel.cpus[0]);
 #endif
 #ifdef CONFIG_SMP
 	_kernel.cpus[0].arch.hartid = csr_read(mhartid);

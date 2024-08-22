@@ -59,7 +59,7 @@ void arch_secondary_cpu_init(int hartid)
 			cpu_num = i;
 		}
 	}
-	csr_write(mscratch, &_kernel.cpus[cpu_num]);
+	csr_write(xscratch, &_kernel.cpus[cpu_num]);
 #ifdef CONFIG_SMP
 	_kernel.cpus[cpu_num].arch.online = true;
 #endif
@@ -73,7 +73,7 @@ void arch_secondary_cpu_init(int hartid)
 	z_riscv_pmp_init();
 #endif
 #ifdef CONFIG_SMP
-	irq_enable(RISCV_IRQ_MSOFT);
+	irq_enable(RISCV_IRQ_SOFT);
 #endif
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }
@@ -167,8 +167,8 @@ void arch_spin_relax(void)
 int arch_smp_init(void)
 {
 
-	IRQ_CONNECT(RISCV_IRQ_MSOFT, 0, sched_ipi_handler, NULL, 0);
-	irq_enable(RISCV_IRQ_MSOFT);
+	IRQ_CONNECT(RISCV_IRQ_SOFT, 0, sched_ipi_handler, NULL, 0);
+	irq_enable(RISCV_IRQ_SOFT);
 
 	return 0;
 }

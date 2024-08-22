@@ -63,14 +63,14 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *    counter will be restored following the MEPC value set within the
 	 *    thread stack.
 	 */
-	stack_init->mstatus = MSTATUS_DEF_RESTORE;
+	stack_init->xstatus = XSTATUS_DEF_RESTORE;
 
 #if defined(CONFIG_FPU_SHARING)
 	/* thread birth happens through the exception return path */
 	thread->arch.exception_depth = 1;
 #elif defined(CONFIG_FPU)
 	/* Unshared FP mode: enable FPU of each thread. */
-	stack_init->mstatus |= MSTATUS_FS_INIT;
+	stack_init->xstatus |= MSTATUS_FS_INIT;
 #endif
 
 #if defined(CONFIG_USERSPACE)
@@ -83,17 +83,17 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	if (IS_ENABLED(CONFIG_USERSPACE)
 	    && (thread->base.user_options & K_USER)) {
 		/* User thread */
-		stack_init->mepc = (unsigned long)k_thread_user_mode_enter;
+		stack_init->xepc = (unsigned long)k_thread_user_mode_enter;
 
 	} else {
 		/* Supervisor thread */
-		stack_init->mepc = (unsigned long)z_thread_entry;
+		stack_init->xepc = (unsigned long)z_thread_entry;
 
 #if defined(CONFIG_PMP_STACK_GUARD)
 		/* Enable PMP in mstatus.MPRV mode for RISC-V machine mode
 		 * if thread is supervisor thread.
 		 */
-		stack_init->mstatus |= MSTATUS_MPRV;
+		stack_init->xstatus |= MSTATUS_MPRV;
 #endif /* CONFIG_PMP_STACK_GUARD */
 	}
 
@@ -155,7 +155,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 				_current->stack_info.size -
 				_current->stack_info.delta);
 
-	status = csr_read(mstatus);
+	status = csr_read(xstatus);
 
 	/* Set next CPU status to user mode */
 	status = INSERT_FIELD(status, MSTATUS_MPP, PRV_U);
@@ -164,8 +164,8 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* Disable IRQs for m-mode until the mode switch */
 	status = INSERT_FIELD(status, MSTATUS_MIE, 0);
 
-	csr_write(mstatus, status);
-	csr_write(mepc, z_thread_entry);
+	csr_write(xstatus, status);
+	csr_write(xepc, z_thread_entry);
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	/* reconfigure as the kernel mode stack will be different */
@@ -230,7 +230,7 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	main_stack = (K_THREAD_STACK_BUFFER(z_main_stack) +
 		      K_THREAD_STACK_SIZEOF(z_main_stack));
 
-	irq_unlock(MSTATUS_IEN);
+	irq_unlock(XSTATUS_IEN);
 
 	__asm__ volatile (
 	"mv sp, %0; jalr ra, %1, 0"

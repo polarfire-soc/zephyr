@@ -18,7 +18,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <zephyr/toolchain.h>
-
+#include <zephyr/arch/riscv/csr.h>
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 #include <soc_context.h>
 #endif
@@ -71,9 +71,8 @@ struct arch_esf {
 	unsigned long a6;		/* function argument */
 	unsigned long a7;		/* function argument */
 #endif /* !CONFIG_RISCV_ISA_RV32E */
-
-	unsigned long mepc;		/* machine exception program counter */
-	unsigned long mstatus;	/* machine status register */
+	unsigned long xepc;		/* machine exception program counter */
+	unsigned long xstatus;	/* machine status register */
 
 	unsigned long s0;		/* callee-saved s0 */
 
