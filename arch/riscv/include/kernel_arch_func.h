@@ -32,8 +32,8 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
 	csr_write(xscratch, &_kernel.cpus[0]);
 #endif
-#ifdef CONFIG_SMP
-	_kernel.cpus[0].arch.hartid = csr_read(mhartid);
+#if defined(CONFIG_SMP) || defined(CONFIG_RISCV_SBI_BOOT)
+	_kernel.cpus[0].arch.hartid = CONFIG_RV_BOOT_HART;
 	_kernel.cpus[0].arch.online = true;
 #endif
 #if ((CONFIG_MP_MAX_NUM_CPUS) > 1)

@@ -14,13 +14,17 @@
 
 static ALWAYS_INLINE uint32_t arch_proc_id(void)
 {
+#if CONFIG_RISCV_S_MODE
+	return _current_cpu->arch.hartid;
+#else
 	return csr_read(mhartid) & ((uintptr_t)CONFIG_RISCV_HART_MASK);
+#endif
 }
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
-#if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
-	return (_cpu_t *)csr_read(mscratch);
+#if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE) || defined(CONFIG_RISCV_SBI_BOOT)
+	return (_cpu_t *)csr_read(xscratch);
 #else
 	return &_kernel.cpus[0];
 #endif
