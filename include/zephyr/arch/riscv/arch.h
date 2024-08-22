@@ -166,6 +166,10 @@
 #define MSTATUS_FS_CLEAN (2UL << 13)
 #define MSTATUS_FS_DIRTY (3UL << 13)
 
+#define SSTATUS_IEN     (1UL << 1)
+#define SSTATUS_SPP_S	(1UL << 8)
+#define STATUS_SPIE_EN	(1UL << 5)
+
 /* This comes from openisa_rv32m1, but doesn't seem to hurt on other
  * platforms:
  * - Preserve machine privileges in MPP. If you see any documentation
@@ -175,6 +179,15 @@
  *   by setting MPIE now, so it will be copied into IE on mret.
  */
 #define MSTATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
+#define SSTATUS_DEF_RESTORE (SSTATUS_SPP_S | STATUS_SPIE_EN)
+
+#ifdef CONFIG_RISCV_S_MODE
+#define XSTATUS_DEF_RESTORE	SSTATUS_DEF_RESTORE
+#define XSTATUS_IEN	SSTATUS_IEN
+#else
+#define XSTATUS_DEF_RESTORE	MSTATUS_DEF_RESTORE
+#define XSTATUS_IEN	MSTATUS_IEN
+#endif
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
@@ -237,11 +250,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	return z_soc_irq_lock();
 #else
 	unsigned int key;
-
-	__asm__ volatile ("csrrc %0, mstatus, %1"
-			  : "=r" (key)
-			  : "rK" (MSTATUS_IEN)
-			  : "memory");
+	key = csr_read_clear(xstatus, XSTATUS_IEN);
 
 	return key;
 #endif
@@ -256,10 +265,8 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	z_soc_irq_unlock(key);
 #else
-	__asm__ volatile ("csrs mstatus, %0"
-			  :
-			  : "r" (key & MSTATUS_IEN)
-			  : "memory");
+	csr_set(xstatus, (key & XSTATUS_IEN));
+
 #endif
 }
 
@@ -268,7 +275,7 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	return z_soc_irq_unlocked(key);
 #else
-	return (key & MSTATUS_IEN) != 0;
+	return (key & XSTATUS_IEN) != 0;
 #endif
 }
 
