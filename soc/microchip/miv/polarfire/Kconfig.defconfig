@@ -20,7 +20,7 @@ config 2ND_LVL_ISR_TBL_OFFSET
 	default 13
 
 config 2ND_LVL_INTR_00_OFFSET
-	default 11
+	default 9
 
 config MAX_IRQ_PER_AGGREGATOR
 	default 186
