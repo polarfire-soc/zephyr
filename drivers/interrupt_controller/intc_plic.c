@@ -111,7 +111,11 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
 
 static inline uint32_t get_first_context(uint32_t hartid)
 {
+#if CONFIG_RISCV_S_MODE
+	return hartid == 0 ? 0 : (hartid * 2);
+#else
 	return hartid == 0 ? 0 : (hartid * 2) - 1;
+#endif
 }
 
 static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t cpu_num)
