@@ -11,6 +11,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <zephyr/arch/riscv/sbi.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 
 volatile struct {
@@ -43,7 +44,9 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		return;
 	}
 #endif
-
+#ifdef CONFIG_RISCV_SBI_BOOT
+	sbi_hsm_hart_start(_kernel.cpus[cpu_num].arch.hartid);
+#endif
 	while (riscv_cpu_boot_flag == 0U) {
 		riscv_cpu_wake_flag = _kernel.cpus[cpu_num].arch.hartid;
 	}
