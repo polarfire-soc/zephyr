@@ -1,0 +1,15 @@
+identifier: qemu_riscv64/qemu_virt_riscv32/s_mode
+name: QEMU Emulation for RISC-V 64-bit Supervisor mode
+type: qemu
+simulation: qemu
+arch: riscv
+toolchain:
+  - zephyr
+  - xtools
+supported:
+  - netif
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
