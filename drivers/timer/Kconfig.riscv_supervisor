@@ -1,0 +1,12 @@
+# openSBI timer driver configuration options
+
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_SUPERVISOR_TIMER
+	bool "RISCV Supervisor Timer"
+	default y
+	help
+	  This module implements a kernel device driver for the generic RISCV
+	  timer driver running in Supervisor privilege level. It provides the
+	  standard "system clock driver" interfaces.
