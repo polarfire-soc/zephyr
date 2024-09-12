@@ -245,6 +245,13 @@ config RISCV_S_MODE
 	  Set this value to enable Zephyr to start up and execute in
 	  the supervisor privileged level.
 
+config RISCV_U_MODE
+	bool "Boot and run Zephyr in User mode"
+	default n
+	help
+	  Set this value to enable Zephyr to start up and execute in
+	  the user (unprivileged) level.
+
 config RISCV_SBI_BOOT
 	bool "Platform uses RISC-V Supervisor Binary Interface"
 	default n

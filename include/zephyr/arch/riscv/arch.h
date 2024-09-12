@@ -170,6 +170,9 @@
 #define SSTATUS_SPP_S	(1UL << 8)
 #define STATUS_SPIE_EN	(1UL << 5)
 
+#define USTATUS_IEN     (1UL)
+#define USTATUS_UPIE_EN (1UL << 4)
+
 /* This comes from openisa_rv32m1, but doesn't seem to hurt on other
  * platforms:
  * - Preserve machine privileges in MPP. If you see any documentation
@@ -180,10 +183,14 @@
  */
 #define MSTATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
 #define SSTATUS_DEF_RESTORE (SSTATUS_SPP_S | STATUS_SPIE_EN)
+#define USTATUS_DEF_RESTORE (USTATUS_UPIE_EN)
 
-#ifdef CONFIG_RISCV_S_MODE
+#if defined(CONFIG_RISCV_S_MODE)
 #define XSTATUS_DEF_RESTORE	SSTATUS_DEF_RESTORE
 #define XSTATUS_IEN	SSTATUS_IEN
+#elif defined(CONFIG_RISCV_U_MODE)
+#define XSTATUS_DEF_RESTORE	USTATUS_DEF_RESTORE
+#define XSTATUS_IEN	USTATUS_IEN
 #else
 #define XSTATUS_DEF_RESTORE	MSTATUS_DEF_RESTORE
 #define XSTATUS_IEN	MSTATUS_IEN
