@@ -137,9 +137,11 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
 
 static ALWAYS_INLINE uint32_t get_hart_context(const struct device *dev, uint32_t hartid)
 {
-	const struct plic_config *config = dev->config;
-
-	return config->hart_context[hartid];
+#if CONFIG_RISCV_S_MODE
+	return hartid == 0 ? 0 : (hartid * 2);
+#else
+	return hartid == 0 ? 0 : (hartid * 2) - 1;
+#endif
 }
 
 static ALWAYS_INLINE uint32_t get_irq_cpumask(const struct device *dev, uint32_t local_irq)
