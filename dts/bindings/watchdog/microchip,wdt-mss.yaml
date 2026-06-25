@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Microchip Technologies Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip Watchdog MSS driver
+
+description: |
+  Microchip Watchdog driver bindings.
+
+  This driver configures the watchdog peripheral in Microchip microcontrollers.
+
+compatible: "microchip,wdt-mss"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Specifies the base address and size of the register block for the watchdog
+      timer.
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      Desired watchdog clock frequency in Hz.
+
+  current-speed:
+    type: int

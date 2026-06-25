@@ -332,5 +332,15 @@
 			alarms-count = <2>;
 			status = "disabled";
 		};
+
+		watchdog0: watchdog@20101000 {
+			compatible = "microchip,wdt-mss";
+			reg = <0x20101000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <100 1>, <105 1>;
+			clock-frequency = <100000>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
 	};
 };
